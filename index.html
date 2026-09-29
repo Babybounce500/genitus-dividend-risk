@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GENITUS RISK METRICS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--bg:#f4f7fb;--surface:#ffffff;--panel:#ffffff;--border:#d9e2ec;--accent:#0e7490;--gold:#b45309;--green:#15803d;--red:#b91c1c;--muted:#52606d;--text:#1e293b;--bright:#0f172a;--mono:'Space Mono',monospace;--sans:'Rajdhani',sans-serif;}
+    :root.dark-theme{--bg:#080c10;--surface:#0d1117;--panel:#111820;--border:#1e2d3d;--accent:#00d4ff;--gold:#f0c040;--green:#00ff88;--red:#ff3b5c;--muted:#7d92a8;--text:#c8d8e8;--bright:#ffffff;}
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;min-height:100vh;transition:background .25s,color .25s;}
+    header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:200;}
+    .logo{display:flex;align-items:center;gap:12px;}
+    .logo-mark{width:32px;height:32px;border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;color:var(--gold);}
+    .logo-text{font-family:var(--mono);font-size:13px;letter-spacing:3px;color:var(--bright);}
+    .logo-sub{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);display:block;margin-top:1px;}
+    #themeToggleBtn{background:none;border:1px solid var(--border);color:var(--accent);width:30px;height:30px;border-radius:2px;cursor:pointer;font-size:14px;}
+    .layout{display:grid;grid-template-columns:340px 1fr;min-height:calc(100vh - 56px);}
+    @media(max-width:900px){.layout{grid-template-columns:1fr;}}
+    .picker-panel{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px;gap:10px;overflow-y:auto;max-height:calc(100vh - 56px);}
+    .field-label{font-family:var(--mono);font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;margin-bottom:4px;display:block;}
+    select,input[type="text"]{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);font-family:var(--mono);font-size:12px;padding:8px 10px;outline:none;border-radius:2px;}
+    .picker-list{flex:1;overflow-y:auto;border:1px solid var(--border);border-radius:2px;min-height:200px;}
+    .picker-item{padding:8px 10px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px;}
+    .picker-item:hover{background:rgba(180,83,9,0.08);}
+    .picker-item .sym{font-family:var(--mono);color:var(--accent);font-weight:700;}
+    .picker-item .nm{color:var(--muted);font-size:11px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .picker-empty{padding:30px 10px;text-align:center;color:var(--muted);font-family:var(--mono);font-size:11px;}
+    .main-panel{padding:18px;overflow-y:auto;}
+    .welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;color:var(--muted);font-family:var(--mono);font-size:12px;gap:10px;text-align:center;}
+    .welcome .big{font-size:32px;opacity:.4;}
+    .analysis-title{font-family:var(--mono);font-size:16px;color:var(--gold);letter-spacing:1px;margin-bottom:14px;}
+    .stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;}
+    @media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr);}}
+    .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:10px;}
+    .stat-box .lbl{font-family:var(--mono);font-size:9px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+    .stat-box .val{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--bright);}
+    .stat-box .val.up{color:var(--green);} .stat-box .val.down{color:var(--red);}
+    .panel-block{background:var(--surface);border:1px solid var(--border);border-radius:3px;padding:14px;margin-bottom:16px;}
+    .panel-block h3{font-family:var(--mono);font-size:11px;letter-spacing:2px;color:var(--gold);text-transform:uppercase;margin-bottom:10px;}
+    .chart-wrap{height:280px;position:relative;}
+    .panel-block p.note{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.6;}
+    .warn{background:rgba(240,192,64,0.1);border:1px solid var(--gold);border-radius:3px;padding:10px 12px;font-size:11px;color:var(--text);margin-bottom:16px;line-height:1.6;}
+  </style>
+</head>
+<body>
+<header>
+  <div class="logo"><div class="logo-mark">σ</div><div><span class="logo-text">GENITUS</span><span class="logo-sub">RISK METRICS</span></div></div>
+  <button id="themeToggleBtn" title="Toggle theme">🌙</button>
+</header>
+<div class="layout">
+  <div class="picker-panel">
+    <div><span class="field-label">Exchange</span><select id="exchangeSelect" onchange="onExchangeChange()"></select></div>
+    <div><span class="field-label">Search Symbol / Name</span><input type="text" id="searchInput" placeholder="e.g. SAP, Shell..." oninput="renderPicker()"></div>
+    <div class="picker-list" id="pickerList"><div class="picker-empty">Select an exchange to list its confirmed payers.</div></div>
+  </div>
+  <div class="main-panel" id="mainPanel">
+    <div class="welcome"><div class="big">σ</div><div>Pick a symbol on the left.<br>Volatility, drawdown and total-return metrics computed entirely from cached dividend-date prices — no live API calls, no daily bars.</div></div>
+  </div>
+</div>
+<script>
+  const SUMMARY_URL = 'https://raw.githubusercontent.com/Babybounce500/genitus-ticker-cache/main/dividend-summary.csv';
+  const HISTORY_URL = 'https://raw.githubusercontent.com/Babybounce500/genitus-ticker-cache/main/dividend-history.csv';
+  (function(){
+    const KEY='genitusTheme:risk';
+    function applyTheme(t){ document.documentElement.classList.toggle('dark-theme', t==='dark'); localStorage.setItem(KEY,t); const btn=document.getElementById('themeToggleBtn'); if(btn) btn.textContent = t==='dark' ? '☀' : '🌙'; }
+    window.__theme = localStorage.getItem(KEY) || 'light';
+    applyTheme(window.__theme);
+    document.addEventListener('DOMContentLoaded', function(){ const btn=document.getElementById('themeToggleBtn'); if(btn) btn.addEventListener('click', function(){ window.__theme = window.__theme==='dark' ? 'light' : 'dark'; applyTheme(window.__theme); }); });
+  })();
+  function parseCSVLine(line){
+    const out=[]; let cur=''; let inQ=false;
+    for(let i=0;i<line.length;i++){ const c=line[i];
+      if(inQ){ if(c==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else inQ=false; } else cur+=c; }
+      else { if(c===','){ out.push(cur); cur=''; } else if(c==='"'){ inQ=true; } else cur+=c; } }
+    out.push(cur); return out;
+  }
+  let summaryByExchange = new Map(); let historyBySymbol = new Map(); let cacheReady = null;
+  function loadCache(){
+    if(cacheReady) return cacheReady;
+    cacheReady = Promise.all([ fetch(SUMMARY_URL).then(r=>r.text()), fetch(HISTORY_URL).then(r=>r.text()) ]).then(([sText,hText])=>{
+      const sLines = sText.split('\n').filter(Boolean);
+      for(let i=1;i<sLines.length;i++){
+        const [fullSymbol,name,type,ex,count,streakYears,streakDir,yieldPct,price,lastDate,lastAmount,lastCurrency] = parseCSVLine(sLines[i]);
+        if(!fullSymbol||!ex) continue;
+        if(!summaryByExchange.has(ex)) summaryByExchange.set(ex, []);
+        summaryByExchange.get(ex).push({ fullSymbol, name:(name||'').trim(), type, ex, count:parseInt(count)||0, streakYears:parseInt(streakYears)||1, streakDir:streakDir||'new', yieldPct:parseFloat(yieldPct)||0, price:price?parseFloat(price):null, lastDate:lastDate||'', lastAmount:parseFloat(lastAmount)||0, lastCurrency:lastCurrency||'' });
+      }
+      const hLines = hText.split('\n').filter(Boolean);
+      for(let i=1;i<hLines.length;i++){
+        const [fullSymbol,date,amount,currency,price,pct] = parseCSVLine(hLines[i]);
+        if(!fullSymbol) continue;
+        if(!historyBySymbol.has(fullSymbol)) historyBySymbol.set(fullSymbol, []);
+        historyBySymbol.get(fullSymbol).push({ date, value:parseFloat(amount)||0, currency:currency||'', price: price?parseFloat(price):null, pctOfPrice: pct?parseFloat(pct):null });
+      }
+    }).catch(e=>console.warn('Cache load failed:', e.message));
+    return cacheReady;
+  }
+  const EXCHANGES = [
+    {g:'🇺🇸 United States',opts:['US','NYSE','NASDAQ','AMEX','PINK','OTCQB','OTCQX','BATS']},
+    {g:'🇨🇦 Canada',opts:['TO','V','NEO']}, {g:'🌎 Latin America',opts:['MX','SA','BA','SN','LIM']},
+    {g:'🇬🇧 United Kingdom',opts:['LSE','IL']},
+    {g:'🇩🇪 Germany',opts:['XETRA','F','STU','DU','BE','MU','HM','HA']},
+    {g:'🇱🇺 Luxembourg',opts:['LU']}, {g:'🇮🇪 Ireland',opts:['IR']},
+    {g:'🇫🇷 France',opts:['PA']}, {g:'🇳🇱 Netherlands',opts:['AS']}, {g:'🇧🇪 Belgium',opts:['BR']},
+    {g:'🇵🇹 Portugal',opts:['LS']}, {g:'🇨🇭 Switzerland',opts:['SW']}, {g:'🇪🇸 Spain',opts:['MC']},
+    {g:'🇦🇹 Austria',opts:['VI']}, {g:'🇬🇷 Greece',opts:['AT']},
+    {g:'🇸🇪 Scandinavia',opts:['ST','OL','CO','HE']},
+    {g:'🇵🇱 Eastern Europe',opts:['WAR','PR','BUD','RO','ZSE']},
+    {g:'🇷🇺 Russia',opts:['MCX']}, {g:'🇹🇷 Turkey',opts:['IS']}, {g:'🇮🇱 Israel',opts:['TA']},
+    {g:'🇿🇦 Africa',opts:['JSE','EGX','BC','XNAI','XZIM','XBOT','LUSE','GSE','USE','RSE','DSE','SEM','MSE','XNSA']},
+    {g:'🇭🇰 Hong Kong',opts:['HK']}, {g:'🇨🇳 China',opts:['SHG','SHE']},
+    {g:'🇰🇷 Korea',opts:['KO','KQ']}, {g:'🇮🇳 India',opts:['NSE']}, {g:'🇵🇰 Pakistan',opts:['KAR']},
+    {g:'🇱🇰 Sri Lanka',opts:['CM']}, {g:'🇸🇬 Southeast Asia',opts:['KLSE','BK','JK','VN','PSE']},
+    {g:'🇹🇼 Taiwan',opts:['TW','TWO']}, {g:'🇦🇺 Australia',opts:['AU']},
+  ];
+  function buildExchangeSelect(){
+    document.getElementById('exchangeSelect').innerHTML = '<option value="">— Select Market —</option>' +
+      EXCHANGES.map(g=>`<optgroup label="${g.g}">${g.opts.map(o=>`<option value="${o}">${o}</option>`).join('')}</optgroup>`).join('');
+  }
+  let currentList = [];
+  async function onExchangeChange(){
+    const ex = document.getElementById('exchangeSelect').value;
+    document.getElementById('searchInput').value='';
+    if(!ex){ currentList=[]; renderPicker(); return; }
+    await loadCache();
+    currentList = (summaryByExchange.get(ex)||[]).slice().sort((a,b)=>b.yieldPct-a.yieldPct);
+    renderPicker();
+  }
+  function renderPicker(){
+    const q = document.getElementById('searchInput').value.toLowerCase().trim();
+    const list = document.getElementById('pickerList');
+    const rows = currentList.filter(r=>!q || r.fullSymbol.toLowerCase().includes(q) || r.name.toLowerCase().includes(q));
+    if(!rows.length){ list.innerHTML = '<div class="picker-empty">No matches.</div>'; return; }
+    list.innerHTML = rows.slice(0,300).map(r=>`<div class="picker-item" onclick="selectSymbol('${r.fullSymbol}')"><span class="sym">${r.fullSymbol}</span> — ${r.yieldPct.toFixed(2)}%<span class="nm">${r.name}</span></div>`).join('');
+  }
+  function mean(arr){ return arr.reduce((s,v)=>s+v,0)/arr.length; }
+  function stddev(arr, m){ return Math.sqrt(arr.reduce((s,v)=>s+(v-m)*(v-m),0)/arr.length) || 0; }
+  function fmt(n){ const v=parseFloat(n); return isNaN(v)?'—':(v<0.01?v.toFixed(6):v.toFixed(2)); }
+
+  let chartInstance=null;
+  async function selectSymbol(fullSymbol){
+    await loadCache();
+    const summaryRow = [...summaryByExchange.values()].flat().find(r=>r.fullSymbol===fullSymbol);
+    const history = (historyBySymbol.get(fullSymbol)||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
+    const priced = history.filter(h=>h.price>0);
+    if(!summaryRow || priced.length<3){
+      document.getElementById('mainPanel').innerHTML = '<div class="welcome">Not enough priced history cached for this symbol yet (need at least 3 dated prices).</div>';
+      return;
+    }
+
+    // Returns between consecutive dividend-date prices (log returns), and the
+    // average interval length in days — used to annualize a low-frequency
+    // volatility proxy. This is NOT daily volatility; we don't have daily bars.
+    const returns = [], intervalsDays = [];
+    for(let i=1;i<priced.length;i++){
+      const p0=priced[i-1].price, p1=priced[i].price;
+      if(p0>0 && p1>0) returns.push(Math.log(p1/p0));
+      intervalsDays.push((new Date(priced[i].date)-new Date(priced[i-1].date))/86400000);
+    }
+    const avgIntervalDays = mean(intervalsDays);
+    const periodVol = stddev(returns, mean(returns));
+    const annualizedVol = periodVol * Math.sqrt(365/avgIntervalDays) * 100;
+
+    // Max drawdown across the sparse (dividend-date) price series.
+    let peak = priced[0].price, maxDD = 0;
+    priced.forEach(h=>{ if(h.price>peak) peak=h.price; const dd=(peak-h.price)/peak; if(dd>maxDD) maxDD=dd; });
+
+    // Price-only CAGR vs. total-return CAGR (price + DRIP-reinvested dividends),
+    // both over the same first-to-last-priced-payment window.
+    const first = priced[0], last = priced[priced.length-1];
+    const totalDays = (new Date(last.date)-new Date(first.date))/86400000;
+    const years = totalDays/365;
+    const priceCAGR = years>0 ? (Math.pow(last.price/first.price, 1/years)-1)*100 : 0;
+
+    let shares = 1;
+    for(let i=1;i<priced.length;i++){
+      const h = priced[i];
+      shares += (shares*h.value)/h.price;
+    }
+    const totalReturnCAGR = years>0 ? (Math.pow(shares*last.price/first.price, 1/years)-1)*100 : 0;
+
+    const rewardRiskRatio = annualizedVol>0 ? (totalReturnCAGR/annualizedVol) : null;
+
+    document.getElementById('mainPanel').innerHTML = `
+      <div class="analysis-title">${summaryRow.fullSymbol} — ${summaryRow.name}</div>
+      <div class="warn"><b>Methodik-Hinweis:</b> Alle Werte hier basieren auf Kursen an Dividenden-Zahltagen (${priced.length} Datenpunkte über ${years.toFixed(1)} Jahre, Ø ${avgIntervalDays.toFixed(0)} Tage Abstand) — nicht auf täglichen Kursdaten. Das ist eine niedrigfrequente Näherung der echten Volatilität, kein Ersatz für einen Tages-Chart. Für sehr selten zahlende Aktien (z.B. nur jährlich) ist die Aussagekraft entsprechend geringer.</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="lbl">Ann. Volatility (proxy)</div><div class="val">${annualizedVol.toFixed(1)}%</div></div>
+        <div class="stat-box"><div class="lbl">Max Drawdown</div><div class="val down">-${(maxDD*100).toFixed(1)}%</div></div>
+        <div class="stat-box"><div class="lbl">Price CAGR</div><div class="val ${priceCAGR>=0?'up':'down'}">${priceCAGR.toFixed(1)}%</div></div>
+        <div class="stat-box"><div class="lbl">Total Return CAGR</div><div class="val up">${totalReturnCAGR.toFixed(1)}%</div></div>
+      </div>
+      <div class="panel-block">
+        <h3>Price Return vs. Total Return (Dividends Reinvested)</h3>
+        <div class="chart-wrap"><canvas id="trChart"></canvas></div>
+        <p class="note">Beide Linien starten bei 100. Die Lücke zwischen den beiden Linien ist genau der Beitrag der Dividende (inkl. Zinseszins durch Reinvestition) zur Gesamtrendite — bei vielen "langweiligen" Dividendenzahlern ist das über Jahrzehnte der größere Teil der Rendite, nicht die Kursentwicklung selbst.</p>
+      </div>
+      <div class="stat-grid" style="grid-template-columns:1fr">
+        <div class="stat-box"><div class="lbl">Return ÷ Volatility (simplified, risk-free rate assumed 0 — NOT a true Sharpe ratio)</div><div class="val ${rewardRiskRatio>0?'up':'down'}">${rewardRiskRatio!=null?rewardRiskRatio.toFixed(2):'—'}</div></div>
+      </div>
+    `;
+
+    // Rebuild the indexed (base=100) price-only and total-return series for the chart.
+    let idxShares = 1;
+    const priceIdx = [], totalIdx = [];
+    priceIdx.push(100); totalIdx.push(100);
+    for(let i=1;i<priced.length;i++){
+      priceIdx.push(priced[i].price/first.price*100);
+      idxShares += (idxShares*priced[i].value)/priced[i].price;
+      totalIdx.push(idxShares*priced[i].price/first.price*100);
+    }
+    const ctx = document.getElementById('trChart').getContext('2d');
+    if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type:'line',
+      data:{ labels: priced.map(h=>h.date), datasets:[
+        { label:'Price only (indexed=100)', data: priceIdx, borderColor:'#7d92a8', borderWidth:1.5, pointRadius:2, fill:false },
+        { label:'Total return incl. DRIP (indexed=100)', data: totalIdx, borderColor:'#00ff88', backgroundColor:'rgba(0,255,136,0.1)', borderWidth:2, pointRadius:2, fill:true },
+      ]},
+      options:{ responsive:true, maintainAspectRatio:false,
+        plugins:{ legend:{ display:true, position:'bottom', labels:{ color:'#7d92a8', font:{family:'Space Mono',size:9}, boxWidth:10 } } },
+        scales:{ x:{ ticks:{ color:'#7d92a8', font:{family:'Space Mono',size:8}, maxTicksLimit:8, maxRotation:0 }, grid:{ display:false } },
+                 y:{ ticks:{ color:'#7d92a8', font:{family:'Space Mono',size:9} }, grid:{ color:'rgba(125,146,168,0.15)' } } }
+      }
+    });
+  }
+  buildExchangeSelect();
+</script>
+</body>
+</html>
