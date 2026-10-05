@@ -86,7 +86,7 @@
         const [fullSymbol,name,type,ex,count,streakYears,streakDir,yieldPct,price,lastDate,lastAmount,lastCurrency] = parseCSVLine(sLines[i]);
         if(!fullSymbol||!ex) continue;
         if(!summaryByExchange.has(ex)) summaryByExchange.set(ex, []);
-        summaryByExchange.get(ex).push({ fullSymbol, name:(name||'').trim(), type, ex, count:parseInt(count)||0, streakYears:parseInt(streakYears)||1, streakDir:streakDir||'new', yieldPct:parseFloat(yieldPct)||0, price:price?parseFloat(price):null, lastDate:lastDate||'', lastAmount:parseFloat(lastAmount)||0, lastCurrency:lastCurrency||'' });
+        summaryByExchange.get(ex).push({ fullSymbol, name:(name||'').trim(), type, ex, count:parseInt(count)||0, streakYears:parseInt(streakYears)||1, streakDir:streakDir||'new', yieldPct:(parseFloat(yieldPct)||0)>50?0:(parseFloat(yieldPct)||0), price:price?parseFloat(price):null, lastDate:lastDate||'', lastAmount:parseFloat(lastAmount)||0, lastCurrency:lastCurrency||'' });
       }
       const hLines = hText.split('\n').filter(Boolean);
       for(let i=1;i<hLines.length;i++){
