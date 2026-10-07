@@ -145,7 +145,12 @@
     await loadCache();
     const summaryRow = [...summaryByExchange.values()].flat().find(r=>r.fullSymbol===fullSymbol);
     const history = (historyBySymbol.get(fullSymbol)||[]).slice().sort((a,b)=>new Date(a.date)-new Date(b.date));
-    const priced = history.filter(h=>h.price>0);
+    // Validated via live testing (AIXXF.US): a single stale/corrupt price
+    // embedded in an otherwise normal series inflated MaxDrawdown from a
+    // real ~66% to a fabricated ~80%. Excluding implausible single points
+    // (>50% implied single-payment yield) before computing anything fixes
+    // this without needing to touch the rest of the series.
+    const priced = history.filter(h=>h.price>0 && !(h.pctOfPrice>50));
     if(!summaryRow || priced.length<3){
       document.getElementById('mainPanel').innerHTML = '<div class="welcome">Not enough priced history cached for this symbol yet (need at least 3 dated prices).</div>';
       return;
