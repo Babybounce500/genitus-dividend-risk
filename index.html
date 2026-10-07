@@ -150,7 +150,19 @@
     // real ~66% to a fabricated ~80%. Excluding implausible single points
     // (>50% implied single-payment yield) before computing anything fixes
     // this without needing to touch the rest of the series.
-    const priced = history.filter(h=>h.price>0 && !(h.pctOfPrice>50));
+    let priced = history.filter(h=>h.price>0 && !(h.pctOfPrice>50));
+    // Second, independent artifact class (found via a follow-up sweep): an
+    // isolated price SPIKE or DIP vs. both chronological neighbors, with a
+    // perfectly normal pctOfPrice (e.g. EWQ.MX 2010-06-23: 267.49 vs. ~25
+    // on both sides -- a misplaced-decimal-style data error, not a stale
+    // yield). Validated: fabricated MaxDrawdown of 94.6% dropped to the
+    // real ~42.3% once this single point was excluded.
+    priced = priced.filter((h,i,arr)=>{
+      if(i===0 || i===arr.length-1) return true;
+      const prev=arr[i-1].price, cur=h.price, next=arr[i+1].price;
+      if(!(prev>0) || !(next>0)) return true;
+      return !((cur>prev*5 && cur>next*5) || (cur<prev/5 && cur<next/5));
+    });
     if(!summaryRow || priced.length<3){
       document.getElementById('mainPanel').innerHTML = '<div class="welcome">Not enough priced history cached for this symbol yet (need at least 3 dated prices).</div>';
       return;
